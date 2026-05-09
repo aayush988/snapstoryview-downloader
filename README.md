@@ -5,6 +5,7 @@
   <a href="https://snapstoryview.com"><img src="https://img.shields.io/badge/Website-snapstoryview.com-FFFC00?style=for-the-badge&logo=snapchat&logoColor=black" alt="Website"></a>
   <img src="https://img.shields.io/badge/Node.js-18.x-green?style=for-the-badge&logo=node.js" alt="Node.js">
   <img src="https://img.shields.io/badge/Next.js-14.x-black?style=for-the-badge&logo=next.js" alt="Next.js">
+  <img src="https://img.shields.io/badge/yt--dlp-latest-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="yt-dlp">
   <img src="https://img.shields.io/badge/Tailwind-3.x-38BDF8?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind">
   <img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="License">
   <img src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=for-the-badge" alt="PRs Welcome">
@@ -13,7 +14,7 @@
 <p align="center">
   <a href="https://snapstoryview.com"><b>🌐 Visit Website</b></a> •
   <a href="#-features"><b>✨ Features</b></a> •
-  <a href="#%EF%B8%8F-product-suite"><b>🧰 Product Suite</b></a> •
+  <a href="#-product-suite"><b>🧰 Product Suite</b></a> •
   <a href="#-how-to-use"><b>📖 How to Use</b></a> •
   <a href="#%EF%B8%8F-tech-stack"><b>🛠️ Tech Stack</b></a> •
   <a href="#-faq"><b>❓ FAQ</b></a>
@@ -27,6 +28,8 @@
 
 We built SnapStoryView because the existing tools for viewing Snap content are either riddled with intrusive ads, hide their best features behind paywalls, leak user data through third-party trackers, or require shady browser extensions. Our mission is simple: provide a **trustworthy, free, and privacy-respecting** way to interact with public Snapchat content — for fans, journalists, marketers, content creators, and anyone curious about a public Snap profile.
 
+Under the hood, SnapStoryView combines a modern Next.js frontend with a robust Node.js API layer and the industry-standard **yt-dlp** media extraction engine to reliably resolve and download high-quality video assets from public Snap URLs.
+
 👉 **Try it now:** [https://snapstoryview.com](https://snapstoryview.com)
 
 ---
@@ -36,7 +39,7 @@ We built SnapStoryView because the existing tools for viewing Snap content are e
 | Feature | Description |
 | :--- | :--- |
 | 👻 **Anonymous Story Viewing** | Watch any public Snapchat user's stories without signing in or being seen |
-| ⬇️ **HD Spotlight Downloads** | Save Snapchat Spotlight videos in their original highest quality |
+| ⬇️ **HD Spotlight Downloads** | Save Snapchat Spotlight videos in their original highest quality (powered by yt-dlp) |
 | 🧑‍🎨 **Bitmoji Downloader** | Grab Bitmoji avatars from public profiles in PNG format |
 | 🔓 **No Login Required** | Zero authentication — never connect a Snapchat account |
 | 📱 **Works on Any Device** | Fully responsive on desktop, tablet, Android, and iOS browsers |
@@ -59,7 +62,7 @@ The main hub. Search for any public Snapchat username and instantly browse their
 View and **download Snapchat stories anonymously**. Paste a username or a story URL, preview the story, and save it to your device. Great for archiving content, reposting with permission, or simply watching without notifying the creator.
 
 ### ⬇️ [Snapchat Spotlight Downloader](https://snapstoryview.com/spotlight-downloader)
-Download trending **Snapchat Spotlight videos in HD** with one click. Just paste the Spotlight link and SnapStoryView fetches the highest-resolution version available — no watermark, no compression artifacts.
+Download trending **Snapchat Spotlight videos in HD** with one click. Just paste the Spotlight link and SnapStoryView (powered by **yt-dlp**) fetches the highest-resolution version available — no watermark, no compression artifacts.
 
 ### 🧑‍🎨 [Snapchat Bitmoji Downloader (ES)](https://snapstoryview.com/es/snapchat-bitmoji-downloader)
 Save any public Snapchat user's **Bitmoji avatar** as a transparent PNG. Available in our localized Spanish experience for our LATAM audience — perfect for memes, profile pics, and creative projects.
@@ -83,7 +86,7 @@ Save any public Snapchat user's **Bitmoji avatar** as a transparent PNG. Availab
 1. Open the [Spotlight Downloader](https://snapstoryview.com/spotlight-downloader).
 2. **Copy the Spotlight URL** from the Snapchat app or web (`https://www.snapchat.com/spotlight/...`).
 3. Paste it into the input box and click **Download**.
-4. SnapStoryView fetches the highest-quality MP4 and offers an instant download.
+4. SnapStoryView's yt-dlp-powered backend resolves the highest-quality MP4 and offers an instant download.
 
 ### Downloading a Bitmoji
 
@@ -111,13 +114,23 @@ SnapStoryView is engineered with a modern, production-grade stack tuned for spee
 ### Backend
 - **Node.js (v18+)** — Runtime for API routes and server actions
 - **Next.js Route Handlers** — REST-style endpoints colocated with the app
+- **yt-dlp** — Battle-tested media extraction engine used to resolve and download Snapchat Spotlight videos and other public media at the highest available quality
+- **Python 3** — Required runtime for invoking yt-dlp from the Node.js backend
+- **child_process / execa** — Safe, sandboxed spawning of yt-dlp subprocesses with timeout and resource limits
 - **Axios + Got** — Outbound HTTP clients for fetching Snap public endpoints
 - **Cheerio** — Server-side HTML parsing for content extraction
 - **Zod** — Runtime input validation for every request
 - **Rate-Limiter-Flexible + Redis** — Abuse prevention and fair-use enforcement
 
+### Media Pipeline (yt-dlp)
+- **URL validation** — Zod schema ensures only valid public Snapchat URLs reach the extractor
+- **yt-dlp subprocess** — Spawned with strict format selection (`bv*+ba/b`) for HD merged MP4 output
+- **FFmpeg** — Used by yt-dlp under the hood for muxing video + audio streams
+- **Streaming response** — Resolved media is streamed directly to the user; nothing is persisted on disk
+- **Auto-update** — yt-dlp is kept on the latest release via a scheduled GitHub Actions job to keep up with Snapchat's changes
+
 ### Infrastructure & SEO
-- **Vercel / Node.js Edge** — Global edge deployment with automatic scaling
+- **Vercel / Node.js Edge** — Global edge deployment with automatic scaling (yt-dlp workloads run on a dedicated Node.js server with FFmpeg + Python preinstalled)
 - **Cloudflare** — CDN, DDoS protection, image optimization, and SSL
 - **PostgreSQL (Neon/Supabase)** — Persistent storage for analytics and i18n strings
 - **Redis (Upstash)** — Caching, rate limiting, and session storage
@@ -126,7 +139,8 @@ SnapStoryView is engineered with a modern, production-grade stack tuned for spee
 - **JSON-LD structured data** — Rich snippets for Google Search and Discover
 
 ### DevOps & Quality
-- **GitHub Actions** — CI/CD pipelines (lint, typecheck, test, deploy)
+- **GitHub Actions** — CI/CD pipelines (lint, typecheck, test, deploy, scheduled yt-dlp updates)
+- **Docker** — Container image bundling Node.js, Python, yt-dlp, and FFmpeg for reproducible deploys
 - **ESLint + Prettier** — Consistent code style enforcement
 - **Vitest + Playwright** — Unit, integration, and end-to-end testing
 - **Sentry** — Production error tracking and performance monitoring
@@ -139,6 +153,9 @@ SnapStoryView is engineered with a modern, production-grade stack tuned for spee
 ### Prerequisites
 - Node.js **v18.0.0** or higher
 - npm **v9+**, pnpm, or yarn
+- **Python 3.8+** (required by yt-dlp)
+- **yt-dlp** (`pip install -U yt-dlp` or via your package manager)
+- **FFmpeg** (`brew install ffmpeg` on macOS, `apt install ffmpeg` on Debian/Ubuntu)
 - Git
 - (Optional) Redis instance for rate-limiting in dev
 
@@ -151,8 +168,15 @@ git clone https://github.com/aayush988/snapstoryview-downloader.git
 # Move into the project directory
 cd snapstoryview-downloader
 
-# Install dependencies
+# Install Node.js dependencies
 npm install
+
+# Install / update yt-dlp (recommended: keep it on the latest release)
+pip install -U yt-dlp
+
+# Verify yt-dlp and ffmpeg are on your PATH
+yt-dlp --version
+ffmpeg -version
 
 # Copy environment variables template
 cp .env.example .env.local
@@ -174,6 +198,7 @@ The app will be running at `http://localhost:3000`.
 | `npm run typecheck` | Run TypeScript in `--noEmit` mode |
 | `npm test` | Run unit and integration tests |
 | `npm run test:e2e` | Run Playwright end-to-end tests |
+| `npm run ytdlp:update` | Pull the latest yt-dlp release |
 
 ---
 
@@ -193,12 +218,14 @@ snapstoryview-downloader/
 │   └── features/                # Feature-specific components
 ├── lib/
 │   ├── snap/                    # Snapchat public API integration
+│   ├── ytdlp/                   # yt-dlp subprocess wrapper & format selectors
 │   ├── seo/                     # Structured data, sitemaps, metadata
 │   └── utils/                   # Shared utilities
 ├── messages/                    # i18n translation files (en, es, ...)
 ├── public/                      # Static assets
 ├── tests/                       # Unit, integration, and E2E tests
 ├── .env.example
+├── Dockerfile                   # Bundles Node.js, Python, yt-dlp, FFmpeg
 ├── next.config.mjs
 ├── package.json
 └── README.md
@@ -236,6 +263,9 @@ A: No. SnapStoryView fetches public stories server-side, so the original poster 
 **Q: What can I download?**  
 A: Public Snapchat stories, Spotlight videos in HD, and Bitmoji avatars (PNG).
 
+**Q: How do you fetch the videos?**  
+A: We use **yt-dlp**, the most reliable open-source media extractor available, paired with FFmpeg for muxing. yt-dlp is auto-updated regularly so the service stays compatible with Snapchat's evolving formats.
+
 **Q: Is it legal to download Snapchat content?**  
 A: SnapStoryView only accesses **public** content. Always respect copyright and the original creator's rights — download for personal, fair-use purposes, and ask permission before reposting.
 
@@ -267,6 +297,16 @@ Please make sure your code passes `npm run lint` and `npm run typecheck` before 
 
 ---
 
+## 🙏 Credits & Acknowledgements
+
+SnapStoryView stands on the shoulders of giants. Huge thanks to the maintainers of:
+
+- **[yt-dlp](https://github.com/yt-dlp/yt-dlp)** — the incredible media extraction engine that powers our HD downloads
+- **[FFmpeg](https://ffmpeg.org/)** — for the muxing and transcoding backbone
+- **[Next.js](https://nextjs.org/)**, **[React](https://react.dev/)**, and the entire open-source web ecosystem
+
+---
+
 ## 📄 License
 
 Distributed under the **MIT License**. See `LICENSE` for more information.
@@ -289,5 +329,3 @@ Distributed under the **MIT License**. See `LICENSE` for more information.
   <br>
   <a href="https://snapstoryview.com"><b>👉 Visit snapstoryview.com</b></a>
 </p>
-# snapstoryview-downloader
-SnapStoryView - Free Snapchat Story Viewer and Spotlight Downloader. View and download Snap stories anonymously.
